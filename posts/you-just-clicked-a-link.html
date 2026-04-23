@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>You Just Clicked a Link. Here's What Happened Next. // NULL POINTER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #020b14;
+      --bg-deep: #050f1c;
+      --bg-panel: #071828;
+      --bg-card: #0a1f33;
+      --accent-cyan: #00d4ff;
+      --accent-green: #00ff88;
+      --accent-amber: #ffaa00;
+      --accent-red: #ff3366;
+      --text-primary: #c8e8f8;
+      --text-muted: #4a7a9b;
+      --text-dim: #1e4060;
+      --border: #0d2d47;
+      --grid-color: rgba(0, 212, 255, 0.04);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-void);
+      color: var(--text-primary);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 17px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px,
+        rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(2,11,20,0.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      padding: 14px 0;
+    }
+
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      max-width: 1100px; margin: 0 auto; padding: 0 24px;
+    }
+
+    .nav-logo {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.1rem; color: var(--accent-cyan);
+      text-decoration: none; letter-spacing: 2px;
+    }
+
+    .nav-logo span { color: var(--accent-green); animation: blink 1.2s step-end infinite; }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .nav-back {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem; color: var(--text-muted);
+      text-decoration: none; letter-spacing: 1px;
+      transition: color 0.2s;
+    }
+    .nav-back:hover { color: var(--accent-cyan); }
+    .nav-back::before { content: '← '; }
+
+    /* PROGRESS BAR */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+      z-index: 200; width: 0%; transition: width 0.1s;
+    }
+
+    /* ARTICLE LAYOUT */
+    .article-wrap {
+      max-width: 740px; margin: 0 auto;
+      padding: 60px 24px 100px;
+      position: relative; z-index: 2;
+    }
+
+    /* Header */
+    .post-header { margin-bottom: 48px; }
+
+    .post-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem; letter-spacing: 2px;
+      text-transform: uppercase; padding: 4px 10px;
+      border: 1px solid var(--accent-red); color: var(--accent-red);
+      margin-bottom: 20px;
+    }
+
+    .post-header h1 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700; line-height: 1.1;
+      color: #fff; letter-spacing: -0.5px;
+      margin-bottom: 20px;
+    }
+
+    .post-header h1 em {
+      font-style: normal;
+      color: var(--accent-cyan);
+    }
+
+    .post-meta {
+      display: flex; gap: 20px; flex-wrap: wrap;
+      align-items: center;
+      padding: 16px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .meta-item {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem; color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+
+    .meta-item.author { color: var(--accent-green); }
+    .meta-item.tag { color: var(--accent-cyan); }
+
+    /* Body content */
+    .post-body { position: relative; }
+
+    .post-body p {
+      margin-bottom: 24px;
+      color: #a8cce0;
+      font-size: 1.05rem;
+      line-height: 1.8;
+    }
+
+    .post-body p strong {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .post-body p em {
+      color: var(--accent-amber);
+      font-style: italic;
+    }
+
+    .post-body h2 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 48px 0 16px;
+      padding-top: 48px;
+      border-top: 1px solid var(--border);
+      letter-spacing: -0.3px;
+    }
+
+    .post-body h2::before {
+      content: '// ';
+      color: var(--accent-cyan);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    .post-body h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      margin: 32px 0 12px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* Callout blocks */
+    .callout {
+      border-left: 3px solid var(--accent-amber);
+      background: rgba(255, 170, 0, 0.05);
+      padding: 20px 24px;
+      margin: 32px 0;
+    }
+
+    .callout.danger {
+      border-left-color: var(--accent-red);
+      background: rgba(255, 51, 102, 0.05);
+    }
+
+    .callout.info {
+      border-left-color: var(--accent-cyan);
+      background: rgba(0, 212, 255, 0.05);
+    }
+
+    .callout.success {
+      border-left-color: var(--accent-green);
+      background: rgba(0, 255, 136, 0.05);
+    }
+
+    .callout-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .callout.danger .callout-label { color: var(--accent-red); }
+    .callout.info .callout-label { color: var(--accent-cyan); }
+    .callout.success .callout-label { color: var(--accent-green); }
+    .callout .callout-label { color: var(--accent-amber); }
+
+    .callout p {
+      margin: 0 !important;
+      font-size: 0.95rem !important;
+    }
+
+    /* Terminal block */
+    .terminal {
+      background: #010a10;
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--accent-green);
+      padding: 24px;
+      margin: 32px 0;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.8;
+    }
+
+    .terminal .t-line { color: var(--text-muted); }
+    .terminal .t-line.cmd { color: var(--accent-green); }
+    .terminal .t-line.cmd::before { content: '> '; color: var(--accent-cyan); }
+    .terminal .t-line.out { color: var(--accent-amber); }
+    .terminal .t-line.warn { color: var(--accent-red); }
+    .terminal .t-line.ok { color: var(--accent-green); }
+
+    /* Stats row */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin: 32px 0;
+    }
+
+    .stat-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-box .num {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-box .label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* Attack chain diagram */
+    .attack-chain {
+      margin: 32px 0;
+      padding: 28px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+    }
+
+    .attack-chain-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .chain {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .chain-step {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem;
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      white-space: nowrap;
+      position: relative;
+    }
+
+    .chain-step.active {
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+      background: rgba(255,51,102,0.08);
+    }
+
+    .chain-arrow {
+      color: var(--text-dim);
+      font-size: 1rem;
+      padding: 0 4px;
+    }
+
+    /* Checklist */
+    .checklist {
+      list-style: none;
+      margin: 24px 0;
+    }
+
+    .checklist li {
+      font-size: 0.95rem;
+      color: #a8cce0;
+      padding: 10px 0 10px 32px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .checklist li::before {
+      content: '□';
+      position: absolute;
+      left: 0;
+      color: var(--accent-cyan);
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    .checklist li.done::before {
+      content: '✓';
+      color: var(--accent-green);
+    }
+
+    /* Author card */
+    .author-card {
+      margin-top: 60px;
+      padding: 28px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent-cyan);
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .author-avatar {
+      width: 52px; height: 52px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.2rem;
+      color: var(--accent-cyan);
+      flex-shrink: 0;
+    }
+
+    .author-card h4 {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent-cyan);
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .author-card p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    /* Next post */
+    .next-post {
+      margin-top: 40px;
+      text-align: center;
+    }
+
+    .back-btn {
+      display: inline-block;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      text-decoration: none;
+      letter-spacing: 2px;
+      border: 1px solid var(--accent-cyan);
+      padding: 12px 24px;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+      background: var(--accent-cyan);
+      color: var(--bg-void);
+    }
+
+    /* Share */
+    .share-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 48px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .share-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .share-btn {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      background: none;
+      text-transform: uppercase;
+    }
+
+    .share-btn:hover {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo">NULL<span>_</span>POINTER</a>
+    <a href="../index.html" class="nav-back">ALL POSTS</a>
+  </div>
+</nav>
+
+<article class="article-wrap">
+
+  <header class="post-header">
+    <div class="post-badge">⚠ THREAT INTEL</div>
+    <h1>You Just Clicked a Link.<br><em>Here's What Happened Next.</em></h1>
+    <div class="post-meta">
+      <span class="meta-item author">// NULL_PTR</span>
+      <span class="meta-item">APR 22, 2026</span>
+      <span class="meta-item">8 MIN READ</span>
+      <span class="meta-item tag">#SOCIALENGINEERING</span>
+      <span class="meta-item tag">#PHISHING</span>
+    </div>
+  </header>
+
+  <div class="post-body">
+
+    <p>
+      Okay, so you clicked it. A random button on a stranger's GitHub page that said "CLICK ME" in big glowing text. And now you're here, reading this.
+    </p>
+
+    <p>
+      I want you to sit with that for a second. <strong>You had zero idea what was on the other end of that link.</strong> You didn't know if it was going to open a download, redirect you seventeen times, fire off a tracking pixel, or land you on a page that looked exactly like your bank's login screen.
+    </p>
+
+    <p>
+      You clicked anyway.
+    </p>
+
+    <p>
+      And here's the thing — so would I. So would almost everyone. That's not me throwing shade at you. That's me pointing at one of the most underestimated problems in all of cybersecurity: <em>humans are wired to click.</em>
+    </p>
+
+    <h2>The Click Is the Whole Attack</h2>
+
+    <p>
+      People think hacking looks like someone in a dark room typing furiously into a terminal while a skull flashes on screen. Hollywood really did a number on all of us. In reality, the majority of successful cyberattacks begin with something stupidly simple: a link you clicked, an attachment you opened, or a form you filled out.
+    </p>
+
+    <p>
+      The technical term is <strong>social engineering</strong> — manipulating people instead of machines. And it's devastatingly effective because it bypasses every firewall, every antivirus, every zero-trust policy you've got. It goes straight for the one thing security software can't fully patch: your brain.
+    </p>
+
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="num">91%</div>
+        <div class="label">Of breaches start with phishing</div>
+      </div>
+      <div class="stat-box">
+        <div class="num">3.4B</div>
+        <div class="label">Phishing emails sent daily</div>
+      </div>
+      <div class="stat-box">
+        <div class="num">97s</div>
+        <div class="label">Avg time to first click on phishing email</div>
+      </div>
+    </div>
+
+    <p>
+      97 seconds. Someone in your organization will click a phishing email within 97 seconds of it landing in their inbox. Not because they're dumb. Because they're <em>busy</em>.
+    </p>
+
+    <h2>What's Actually in a Link</h2>
+
+    <p>
+      When you click a hyperlink, you're doing more than just "going somewhere." You're initiating an HTTP request that carries your IP address, browser type, operating system, screen resolution, language preferences, and a whole list of identifiers that together form something called a <strong>browser fingerprint</strong>. Without logging in to anything. Without a cookie. Just by showing up.
+    </p>
+
+    <div class="terminal">
+      <div class="t-line">[INCOMING CONNECTION LOG — WHAT A SERVER SEES WHEN YOU CLICK]</div>
+      <div class="t-line">&nbsp;</div>
+      <div class="t-line cmd">GET /landing HTTP/1.1</div>
+      <div class="t-line out">Host: definitely-not-evil.com</div>
+      <div class="t-line out">User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124</div>
+      <div class="t-line out">Accept-Language: en-US,en;q=0.9</div>
+      <div class="t-line out">Referer: https://github.com/your-username</div>
+      <div class="t-line out">X-Forwarded-For: 98.213.xx.xxx  ← your approximate location</div>
+      <div class="t-line">&nbsp;</div>
+      <div class="t-line warn">[!] Fingerprint confidence: 94.3%</div>
+      <div class="t-line warn">[!] Unique visitor identified across sessions</div>
+      <div class="t-line ok">[+] User data written to analytics.db</div>
+    </div>
+
+    <p>
+      I made that terminal output up, obviously — but the data in it is real. That's genuinely what a server receives every time you make a request. Most of the time it's used for boring stuff like ad targeting. But in the wrong hands, it's reconnaissance. It tells an attacker your rough location, what software you're running, and sometimes even where you came from.
+    </p>
+
+    <h2>The Anatomy of a Phishing Attack</h2>
+
+    <p>
+      Let me walk you through how a real phishing campaign actually works, because it's more deliberate and more patient than people imagine.
+    </p>
+
+    <div class="attack-chain">
+      <div class="attack-chain-label">// ATTACK CHAIN — SOCIAL ENGINEERING</div>
+      <div class="chain">
+        <div class="chain-step">RECONNAISSANCE</div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step">PRETEXT BUILD</div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step active">HOOK (THE CLICK)</div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step">CREDENTIAL HARVEST</div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step">PERSISTENCE</div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step">LATERAL MOVEMENT</div>
+      </div>
+    </div>
+
+    <h3>Step 1 — Reconnaissance</h3>
+
+    <p>
+      Before a targeted attacker sends you anything, they've probably already googled you. Your LinkedIn tells them where you work and who your boss is. Your GitHub tells them what technologies you use. Your Twitter/X tells them what you care about and what kind of humor gets you to engage. <strong>Every public post is data they can use to craft a convincing lure.</strong>
+    </p>
+
+    <h3>Step 2 — Building the Pretext</h3>
+
+    <p>
+      A pretext is the fake story wrapped around the attack. Good pretexts don't feel like attacks — they feel like interruptions to your normal day. "Your invoice is attached." "Your package couldn't be delivered." "Someone tried to access your account." They're built around urgency, authority, or fear, because those emotions short-circuit your analytical brain.
+    </p>
+
+    <div class="callout danger">
+      <div class="callout-label">⚠ REAL EXAMPLE</div>
+      <p>In 2020, Twitter employees were targeted via phone calls from "IT support." The caller had enough internal knowledge to sound completely legitimate and convinced employees to hand over credentials to Twitter's internal admin tools. The result: 130 high-profile accounts hijacked including Barack Obama, Elon Musk, and Apple — all from a single convincing phone call.</p>
+    </div>
+
+    <h3>Step 3 — The Hook (That's You, Right Now)</h3>
+
+    <p>
+      The link, the button, the attachment — this is the moment the trap closes. But here's what's interesting: <em>the click itself often isn't even the dangerous part.</em> It's what the click leads to.
+    </p>
+
+    <p>
+      Landing pages for credential phishing are genuinely scary good now. Tools exist that create near-perfect real-time mirrors of login pages — Office 365, Google, your bank — complete with the correct SSL certificate and a URL that's just one character off from the real one. When you type in your password, it gets forwarded to the real site so you don't notice anything went wrong. You just logged in, same as always. Except now someone else has your password too.
+    </p>
+
+    <h3>Step 4 — After the Harvest</h3>
+
+    <p>
+      Most people imagine "getting hacked" as a dramatic immediate event. Your screen goes dark, skull and crossbones, etc. The reality is usually the opposite. <strong>Attackers who are serious do nothing for weeks.</strong> They log in quietly. They read your emails. They map your organization. They wait for the moment a wire transfer request wouldn't seem unusual, or they wait for your company's payroll credentials to appear in the inbox.
+    </p>
+
+    <p>
+      The average time between initial compromise and detection in a corporate breach? According to IBM's Cost of a Data Breach report: <em>over 200 days.</em> More than six months of someone quietly reading your mail before anyone notices.
+    </p>
+
+    <h2>Why Smart People Fall for This</h2>
+
+    <p>
+      I want to be really direct here because there's a narrative that security awareness training likes to push, which is that people who get phished were careless or dumb. That's not just unhelpful — it's factually wrong.
+    </p>
+
+    <p>
+      Security researchers and experienced developers get phished. Employees at cybersecurity companies get phished. The common factor isn't intelligence or carelessness. It's <em>context</em>. When you're in the middle of a busy workday, juggling twelve tabs, and a message arrives that fits perfectly into your current mental context, your brain pattern-matches and acts. That's not a flaw. That's your brain doing exactly what it evolved to do.
+    </p>
+
+    <div class="callout info">
+      <div class="callout-label">// COGNITIVE BIAS AT WORK</div>
+      <p>Attackers exploit what psychologists call "cognitive load." The more mentally occupied you are, the more you rely on automatic thinking (System 1) rather than deliberate analysis (System 2). Sending phishing emails on Monday mornings and right before holidays isn't accidental — those are peak cognitive load moments.</p>
+    </div>
+
+    <h2>What You Can Actually Do About It</h2>
+
+    <p>
+      Okay, enough doom. Here's the practical part. I'm not going to tell you to "be more careful" because that's useless advice. I'm going to give you actual habits that make a real difference.
+    </p>
+
+    <h3>The Non-Negotiables</h3>
+
+    <ul class="checklist">
+      <li class="done"><strong>Use a password manager.</strong> 1Password, Bitwarden, whatever — just pick one and use it. If every account has a unique random password, a single credential theft can't cascade into everything you own.</li>
+      <li class="done"><strong>Enable hardware MFA where you can.</strong> A YubiKey or passkey is phishing-resistant in a way that SMS and authenticator codes are not. If a phishing site captures your TOTP code, they can replay it in real time. Hardware keys can't be replayed.</li>
+      <li><strong>Hover before you click.</strong> In desktop browsers, hovering over a link shows the actual destination URL in the status bar. Takes one second. Gets easier as a habit. Do it.</li>
+      <li><strong>Treat urgency as a red flag.</strong> Legitimate systems give you time. "Your account will be deleted in 24 hours unless you verify NOW" is almost always a lie designed to stop you from thinking.</li>
+      <li><strong>Go direct, not through the link.</strong> If an email claims to be from your bank, don't click the link. Open a new tab and type your bank's URL yourself. If it's legitimate, you'll find it.</li>
+      <li><strong>Report suspicious messages, don't just delete them.</strong> If you're in an organization, IT needs to know about phishing attempts. One report protects everyone.</li>
+    </ul>
+
+    <div class="callout success">
+      <div class="callout-label">// ACTUALLY USEFUL</div>
+      <p>If you want to check whether a link is suspicious before clicking, paste it into <strong>urlscan.io</strong> or <strong>VirusTotal</strong>. Both are free, both are extremely good, and both will tell you if a URL has been flagged as malicious.</p>
+    </div>
+
+    <h2>The Bigger Point</h2>
+
+    <p>
+      You came here because you clicked a random button on the internet. And I don't say that to make you feel bad — I say it because it's the perfect illustration of something the security industry gets consistently wrong.
+    </p>
+
+    <p>
+      We've spent decades building better walls, better locks, better detection systems. And attackers just... knocked on the front door and asked nicely. The human layer is the layer that gets attacked most often precisely because it's the one that gets invested in the least.
+    </p>
+
+    <p>
+      <strong>Knowing this doesn't make you bulletproof. But it makes you significantly harder to hit.</strong> You'll notice the urgency manipulation. You'll pause before entering credentials somewhere unfamiliar. You'll hover over that link.
+    </p>
+
+    <p>
+      And occasionally, when you see a giant button that says "CLICK ME" — you might just stop and think for a half second before doing it.
+    </p>
+
+    <p>
+      <em>Or you'll click it anyway and end up reading a security blog. Which honestly, same result.</em>
+    </p>
+
+    <div class="share-row">
+      <span class="share-label">// SHARE THIS</span>
+      <button class="share-btn" onclick="navigator.clipboard.writeText(window.location.href); this.textContent='COPIED!'">COPY LINK</button>
+      <a href="https://twitter.com/intent/tweet?text=You+just+clicked+a+link.+Here%27s+what+happened+next.&url=" class="share-btn" target="_blank">TWITTER/X</a>
+      <a href="https://www.linkedin.com/sharing/share-offsite/?url=" class="share-btn" target="_blank">LINKEDIN</a>
+    </div>
+
+    <div class="author-card">
+      <div class="author-avatar">N_</div>
+      <div>
+        <h4>// NULL_POINTER</h4>
+        <p>Writing about cybersecurity for people who don't want to read another corporate whitepaper. I work in security, I make mistakes, and I think the best protection is being honest about how this stuff actually works.</p>
+      </div>
+    </div>
+
+    <div class="next-post" style="margin-top:60px;">
+      <a href="../index.html" class="back-btn">← BACK TO ALL POSTS</a>
+    </div>
+
+  </div>
+</article>
+
+<script>
+  // Reading progress bar
+  window.addEventListener('scroll', () => {
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = (window.scrollY / docH) * 100;
+    document.getElementById('progress-bar').style.width = progress + '%';
+  });
+</script>
+
+</body>
+</html>

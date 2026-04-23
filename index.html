@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NULL POINTER // Cybersecurity Blog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #020b14;
+      --bg-deep: #050f1c;
+      --bg-panel: #071828;
+      --bg-card: #0a1f33;
+      --accent-cyan: #00d4ff;
+      --accent-green: #00ff88;
+      --accent-amber: #ffaa00;
+      --accent-red: #ff3366;
+      --text-primary: #c8e8f8;
+      --text-muted: #4a7a9b;
+      --text-dim: #1e4060;
+      --border: #0d2d47;
+      --border-glow: rgba(0, 212, 255, 0.3);
+      --grid-color: rgba(0, 212, 255, 0.04);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-void);
+      color: var(--text-primary);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: crosshair;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Matrix rain canvas */
+    #matrix-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: 0.035;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Scanline overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(2, 11, 20, 0.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      padding: 14px 0;
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .nav-logo {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.1rem;
+      color: var(--accent-cyan);
+      text-decoration: none;
+      letter-spacing: 2px;
+    }
+
+    .nav-logo span {
+      color: var(--accent-green);
+      animation: blink 1.2s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      letter-spacing: 1px;
+      transition: color 0.2s;
+      text-transform: uppercase;
+    }
+
+    .nav-links a:hover { color: var(--accent-cyan); }
+
+    .nav-status {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent-green);
+      letter-spacing: 1px;
+    }
+
+    .nav-status::before {
+      content: '● ';
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 80px 0 60px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent-green);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-weight: 700;
+      line-height: 1.0;
+      letter-spacing: -1px;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+
+    .hero h1 .glitch {
+      color: var(--accent-cyan);
+      position: relative;
+      display: inline-block;
+    }
+
+    .hero h1 .glitch::before,
+    .hero h1 .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+    }
+
+    .hero h1 .glitch::before {
+      color: var(--accent-red);
+      animation: glitch1 3.5s infinite;
+      clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+    }
+
+    .hero h1 .glitch::after {
+      color: var(--accent-green);
+      animation: glitch2 3.5s infinite;
+      clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+    }
+
+    @keyframes glitch1 {
+      0%, 90%, 100% { transform: none; opacity: 0; }
+      92% { transform: translate(-3px, 1px); opacity: 0.8; }
+      94% { transform: translate(3px, -1px); opacity: 0.8; }
+      96% { transform: translate(-1px, 2px); opacity: 0; }
+    }
+
+    @keyframes glitch2 {
+      0%, 88%, 100% { transform: none; opacity: 0; }
+      90% { transform: translate(3px, -2px); opacity: 0.7; }
+      93% { transform: translate(-2px, 1px); opacity: 0.7; }
+      95% { transform: translate(1px, -1px); opacity: 0; }
+    }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 560px;
+      margin-bottom: 36px;
+      line-height: 1.7;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      border-left: 2px solid var(--accent-cyan);
+      padding-left: 10px;
+    }
+
+    .stat strong {
+      display: block;
+      color: var(--accent-cyan);
+      font-size: 1.4rem;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+    }
+
+    /* ── FEATURED POST ── */
+    .section-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--accent-amber);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    .featured-post {
+      margin: 60px 0 40px;
+    }
+
+    .post-card-featured {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--accent-cyan);
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      text-decoration: none;
+      display: block;
+    }
+
+    .post-card-featured::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at top left, rgba(0,212,255,0.06), transparent 60%);
+      pointer-events: none;
+    }
+
+    .post-card-featured:hover {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 40px rgba(0,212,255,0.08), inset 0 0 40px rgba(0,212,255,0.03);
+    }
+
+    .post-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border: 1px solid currentColor;
+      margin-bottom: 16px;
+    }
+
+    .badge-featured { color: var(--accent-amber); }
+    .badge-warning { color: var(--accent-red); }
+    .badge-howto { color: var(--accent-green); }
+
+    .post-card-featured h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .post-card-featured .post-excerpt {
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.7;
+      max-width: 680px;
+      margin-bottom: 24px;
+    }
+
+    .post-meta {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+
+    .meta-item.author { color: var(--accent-green); }
+    .meta-item.tag { color: var(--accent-cyan); }
+
+    .read-more {
+      margin-left: auto;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: letter-spacing 0.2s;
+    }
+
+    .post-card-featured:hover .read-more {
+      letter-spacing: 4px;
+    }
+
+    .read-more::after { content: ' →'; }
+
+    /* ── POST GRID ── */
+    .posts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin: 20px 0 80px;
+    }
+
+    .post-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: block;
+    }
+
+    .post-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 0; height: 2px;
+      background: var(--accent-cyan);
+      transition: width 0.3s;
+    }
+
+    .post-card:hover { border-color: var(--border-glow); transform: translateY(-2px); }
+    .post-card:hover::after { width: 100%; }
+
+    .post-card h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.3;
+      margin: 10px 0 10px;
+    }
+
+    .post-card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    /* Placeholder cards */
+    .post-card.placeholder {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .post-card.placeholder .ph-bar {
+      height: 10px;
+      background: var(--border);
+      margin-bottom: 8px;
+      border-radius: 2px;
+    }
+
+    .post-card.placeholder .ph-bar.short { width: 60%; }
+    .post-card.placeholder .ph-bar.med { width: 85%; }
+
+    .coming-soon {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 16px;
+    }
+
+    /* ── TERMINAL SUBSCRIBE ── */
+    .subscribe-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent-green);
+      padding: 32px 40px;
+      margin-bottom: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .subscribe-box h3 {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--accent-green);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .subscribe-box p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .subscribe-form {
+      display: flex;
+      gap: 0;
+    }
+
+    .subscribe-form input {
+      background: var(--bg-void);
+      border: 1px solid var(--border);
+      border-right: none;
+      color: var(--text-primary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.8rem;
+      padding: 10px 16px;
+      outline: none;
+      width: 240px;
+      transition: border-color 0.2s;
+    }
+
+    .subscribe-form input:focus { border-color: var(--accent-green); }
+    .subscribe-form input::placeholder { color: var(--text-dim); }
+
+    .subscribe-form button {
+      background: var(--accent-green);
+      color: var(--bg-void);
+      border: none;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 10px 20px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: opacity 0.2s;
+    }
+
+    .subscribe-form button:hover { opacity: 0.85; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      text-align: center;
+    }
+
+    .footer-logo {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      letter-spacing: 3px;
+      margin-bottom: 10px;
+    }
+
+    footer p {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+
+    /* Terminal cursor on headings */
+    .cursor-after::after {
+      content: '_';
+      color: var(--accent-cyan);
+      animation: blink 1s step-end infinite;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">NULL<span>_</span>POINTER</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="#posts">Posts</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+    <div class="nav-status">SYSTEM ONLINE</div>
+  </div>
+</nav>
+
+<main>
+  <div class="container">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-label">&gt; INITIALIZING BLOG // v1.0.0</div>
+      <h1>
+        Don't trust<br>
+        <span class="glitch" data-text="anything.">anything.</span>
+      </h1>
+      <p class="hero-sub">
+        Real talk about cybersecurity. No fluff, no corporate speak — just a person who got tired of watching people get owned online and decided to write about it.
+      </p>
+      <div class="hero-stats">
+        <div class="stat"><strong>01</strong>POST LIVE</div>
+        <div class="stat"><strong>∞</strong>THREATS DAILY</div>
+        <div class="stat"><strong>0</strong>PAYWALLS</div>
+      </div>
+    </section>
+
+    <!-- FEATURED -->
+    <section class="featured-post">
+      <div class="section-label">// LATEST DISPATCH</div>
+      <a href="posts/you-just-clicked-a-link.html" class="post-card-featured">
+        <div class="post-badge badge-warning">⚠ THREAT INTEL</div>
+        <h2 class="cursor-after">You Just Clicked a Link. Here's What Happened Next.</h2>
+        <p class="post-excerpt">
+          You saw a button. It said "click me." And you did — because of course you did. Welcome to exactly how phishing works. Here's the full breakdown of what attackers are actually counting on, and it's not what you think.
+        </p>
+        <div class="post-meta">
+          <span class="meta-item author">// NULL_PTR</span>
+          <span class="meta-item">APR 22, 2026</span>
+          <span class="meta-item">8 MIN READ</span>
+          <span class="meta-item tag">#SOCIALENGINEERING</span>
+          <span class="meta-item tag">#PHISHING</span>
+          <span class="read-more">READ</span>
+        </div>
+      </a>
+    </section>
+
+    <!-- POSTS GRID -->
+    <section id="posts">
+      <div class="section-label">// MORE FROM THE ARCHIVE</div>
+      <div class="posts-grid">
+
+        <!-- Placeholder posts -->
+        <div class="post-card placeholder">
+          <div class="post-badge badge-howto" style="opacity:0.4;font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:2px;padding:3px 8px;border:1px solid;">COMING SOON</div>
+          <div class="ph-bar med" style="margin-top:12px;"></div>
+          <div class="ph-bar short"></div>
+          <div class="ph-bar med"></div>
+          <div class="ph-bar short"></div>
+          <div class="coming-soon">// POST_002 — LOADING</div>
+        </div>
+
+        <div class="post-card placeholder">
+          <div class="post-badge badge-warning" style="opacity:0.4;font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:2px;padding:3px 8px;border:1px solid;">COMING SOON</div>
+          <div class="ph-bar med" style="margin-top:12px;"></div>
+          <div class="ph-bar short"></div>
+          <div class="ph-bar med"></div>
+          <div class="ph-bar short"></div>
+          <div class="coming-soon">// POST_003 — LOADING</div>
+        </div>
+
+        <div class="post-card placeholder">
+          <div class="post-badge badge-featured" style="opacity:0.4;font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:2px;padding:3px 8px;border:1px solid;">COMING SOON</div>
+          <div class="ph-bar med" style="margin-top:12px;"></div>
+          <div class="ph-bar short"></div>
+          <div class="ph-bar med"></div>
+          <div class="ph-bar short"></div>
+          <div class="coming-soon">// POST_004 — LOADING</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SUBSCRIBE -->
+    <div class="subscribe-box" id="about">
+      <div>
+        <h3>&gt; STAY IN THE LOOP</h3>
+        <p>New posts on threats, tactics, and staying sane online. No spam. Ever.</p>
+      </div>
+      <div class="subscribe-form">
+        <input type="email" placeholder="your@email.com" />
+        <button>SUBSCRIBE</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-logo">NULL_POINTER</div>
+    <p>// BUILT IN THE OPEN · HOSTED ON GITHUB PAGES · NO TRACKERS · NO ADS</p>
+  </div>
+</footer>
+
+<script>
+  // Matrix rain
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ<>/[]{}|\\';
+  const fontSize = 13;
+  let columns = Math.floor(canvas.width / fontSize);
+  let drops = Array(columns).fill(1);
+
+  function drawMatrix() {
+    ctx.fillStyle = 'rgba(2, 11, 20, 0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00d4ff';
+    ctx.font = `${fontSize}px 'Share Tech Mono', monospace`;
+
+    for (let i = 0; i < drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+
+  setInterval(drawMatrix, 50);
+</script>
+
+</body>
+</html>
