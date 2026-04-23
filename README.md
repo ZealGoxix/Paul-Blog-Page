@@ -1,2 +1,2 @@
-# Null-Pointer-Blog
+# Blog
 CyberSecurity/Data Science Posts
