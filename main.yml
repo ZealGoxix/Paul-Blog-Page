@@ -1,2 +1,15 @@
-- name: Create Robots.txt
-  uses: s-thom/create-robots-txt-action@v1.1.1
+name: Create Robots.txt
+on: [push] # Activate on push, or use schedule for automation
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required for the action to commit files
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create Robots.txt
+        uses: s-thom/create-robots-txt-action@v1.1.1
+        with:
+          # Optional: Customize with inputs
+          policy: 'disallow: /private/'
